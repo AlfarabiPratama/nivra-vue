@@ -315,10 +315,12 @@
                   bg-color="rgba(255,255,255,0.2)"
                 >
                   <v-avatar size="64" class="border-2-white bg-surface">
-                    <v-img
+                    <ImageLoader
                       src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4"
-                      alt="Avatar"
-                    ></v-img>
+                      alt="User Avatar"
+                      placeholder-height="64px"
+                      img-class="rounded-circle"
+                    />
                   </v-avatar>
                 </v-progress-circular>
                 <div class="xp-badge">XP</div>
@@ -490,12 +492,22 @@
     <v-row class="mt-2">
       <!-- Calendar Widget -->
       <v-col cols="12" md="6">
-        <CalendarWidget />
+        <Suspense>
+          <CalendarWidget />
+          <template #fallback>
+            <SkeletonLoader variant="widget" />
+          </template>
+        </Suspense>
       </v-col>
 
       <!-- Clock Widget -->
       <v-col cols="12" md="6">
-        <ClockWidget />
+        <Suspense>
+          <ClockWidget />
+          <template #fallback>
+            <SkeletonLoader variant="widget" />
+          </template>
+        </Suspense>
       </v-col>
     </v-row>
 
@@ -520,7 +532,12 @@
               >Lihat Riwayat Lengkap</v-btn
             >
           </div>
-          <CalendarHeatmap :data="activityData" />
+          <Suspense>
+            <CalendarHeatmap :data="activityData" />
+            <template #fallback>
+              <SkeletonLoader variant="chart" />
+            </template>
+          </Suspense>
         </v-card>
       </v-col>
     </v-row>
@@ -546,13 +563,23 @@
 
 <script setup>
 import { format } from "date-fns";
-import { computed, onMounted, ref } from "vue";
-import CalendarHeatmap from "../components/CalendarHeatmap.vue";
-import CalendarWidget from "../components/CalendarWidget.vue";
-import ClockWidget from "../components/ClockWidget.vue";
+import { computed, onMounted, ref, defineAsyncComponent } from "vue";
 import { useHabitStore } from "../store/habitStore";
 import { useUserStore } from "../store/userStore";
 import { useTodoStore } from "../store/todoStore";
+import SkeletonLoader from "../components/SkeletonLoader.vue";
+import ImageLoader from "../components/ImageLoader.vue";
+
+// Lazy load heavy components
+const CalendarHeatmap = defineAsyncComponent(() =>
+  import("../components/CalendarHeatmap.vue")
+);
+const CalendarWidget = defineAsyncComponent(() =>
+  import("../components/CalendarWidget.vue")
+);
+const ClockWidget = defineAsyncComponent(() =>
+  import("../components/ClockWidget.vue")
+);
 
 const userStore = useUserStore();
 const habitStore = useHabitStore();

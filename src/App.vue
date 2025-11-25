@@ -42,6 +42,7 @@
               variant="text"
               size="small"
               class="ml-2"
+              aria-label="Collapse navigation menu"
               @click.stop="rail = true"
             ></v-btn>
           </div>
@@ -56,6 +57,7 @@
           :title="!rail ? item.title : undefined"
           :value="item.value"
           :to="item.to"
+          :aria-label="'Navigate to ' + item.title"
           class="nav-item mb-2 rounded-xl"
           :class="{ 'nav-item-rail': rail, 'px-2': rail }"
         >
@@ -86,6 +88,9 @@
                   : 'mdi-weather-night'
                 : undefined
             "
+            :aria-label="
+              isDark ? 'Switch to light mode' : 'Switch to dark mode'
+            "
             variant="tonal"
             color="primary"
             @click.stop="toggleTheme"
@@ -103,10 +108,12 @@
           <v-card class="user-card rounded-xl pa-4" elevation="0">
             <div class="d-flex align-center">
               <v-avatar size="48" class="user-avatar">
-                <v-img
+                <ImageLoader
                   src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
-                  alt="Avatar"
-                ></v-img>
+                  alt="User Avatar"
+                  placeholder-height="48px"
+                  img-class="rounded-circle"
+                />
               </v-avatar>
               <div class="ml-3 flex-grow-1">
                 <div class="text-subtitle-2 font-weight-bold">Alex Doe</div>
@@ -123,6 +130,7 @@
                 icon="mdi-cog"
                 variant="text"
                 size="small"
+                aria-label="Open settings"
                 to="/settings"
               ></v-btn>
             </div>
@@ -134,11 +142,13 @@
           <v-btn
             icon="mdi-account-circle"
             variant="text"
+            aria-label="Go to settings"
             to="/settings"
           ></v-btn>
           <v-btn
             icon="mdi-chevron-right"
             variant="text"
+            aria-label="Expand navigation menu"
             @click.stop="rail = false"
           ></v-btn>
         </div>
@@ -147,10 +157,18 @@
 
     <!-- Mobile Header -->
     <v-app-bar app class="d-md-none modern-app-bar" elevation="0">
-      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+      <v-app-bar-nav-icon
+        @click="drawer = !drawer"
+        aria-label="Toggle navigation drawer"
+      ></v-app-bar-nav-icon>
       <v-app-bar-title class="font-weight-bold">Nivra</v-app-bar-title>
       <v-spacer></v-spacer>
-      <v-btn icon @click="toggleTheme" variant="text">
+      <v-btn
+        icon
+        @click="toggleTheme"
+        variant="text"
+        :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+      >
         <v-icon>{{
           isDark ? "mdi-weather-sunny" : "mdi-weather-night"
         }}</v-icon>
@@ -158,7 +176,7 @@
     </v-app-bar>
 
     <!-- Main Content -->
-    <v-main class="bg-background">
+    <v-main class="bg-background" id="main-content" role="main">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -188,21 +206,51 @@
     </v-bottom-navigation>
   </v-app>
 
+  <!-- Gamification Components with Lazy Loading -->
+  <Suspense>
+    <LevelUpModal
+      v-model="userStore.showLevelUpModal"
+      :level="userStore.level"
+    />
+  </Suspense>
+  <Suspense>
+    <ToastNotification
+      v-model="userStore.showToast"
+      :amount="userStore.toastAmount"
+      :message="userStore.toastMessage"
+    />
+  </Suspense>
+
+  <!-- Global Error Notification -->
+  <ErrorNotification />
+
+  <!-- PWA Components -->
+  <InstallPrompt />
+  <OfflineIndicator />
+  <UpdateNotification />
+
   <!-- Gamification Components -->
-  <LevelUpModal v-model="userStore.showLevelUpModal" :level="userStore.level" />
-  <ToastNotification
-    v-model="userStore.showToast"
-    :amount="userStore.toastAmount"
-    :message="userStore.toastMessage"
-  />
+  <AchievementNotification />
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, defineAsyncComponent } from "vue";
 import { useTheme, useDisplay } from "vuetify";
 import { useUserStore } from "@/store/userStore";
-import LevelUpModal from "@/components/LevelUpModal.vue";
-import ToastNotification from "@/components/ToastNotification.vue";
+import ImageLoader from "@/components/ImageLoader.vue";
+import ErrorNotification from "@/components/ErrorNotification.vue";
+import InstallPrompt from "@/components/InstallPrompt.vue";
+import OfflineIndicator from "@/components/OfflineIndicator.vue";
+import UpdateNotification from "@/components/UpdateNotification.vue";
+import AchievementNotification from "@/components/AchievementNotification.vue";
+
+// Lazy load modal components
+const LevelUpModal = defineAsyncComponent(() =>
+  import("@/components/LevelUpModal.vue")
+);
+const ToastNotification = defineAsyncComponent(() =>
+  import("@/components/ToastNotification.vue")
+);
 
 const theme = useTheme();
 const { mobile } = useDisplay();
@@ -287,6 +335,11 @@ onMounted(() => {
     isDark.value = savedTheme === "true";
     theme.global.name.value = isDark.value ? "midnight" : "ocean";
   }
+
+  // Initialize gamification
+  userStore.generateDailyChallenge();
+  userStore.generateWeeklyChallenge();
+  userStore.checkAchievements();
 });
 </script>
 

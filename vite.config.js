@@ -21,10 +21,29 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
+          // Core vendor chunks
           vendor: ["vue", "vue-router", "pinia"],
           vuetify: ["vuetify"],
+
+          // Chart libraries (heavy)
           chartjs: ["chart.js", "vue-chartjs"],
+
+          // Date utilities (used across multiple views)
+          "date-utils": ["date-fns"],
+
+          // Persistence
+          persistence: ["dexie", "idb", "pinia-plugin-persistedstate"],
         },
+      },
+    },
+    // Optimize chunk sizes
+    chunkSizeWarningLimit: 600,
+    // Enable minification
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console logs in production
+        drop_debugger: true,
       },
     },
   },

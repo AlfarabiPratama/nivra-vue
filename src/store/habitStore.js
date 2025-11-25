@@ -4,6 +4,8 @@ import { useUserStore } from "./userStore";
 export const useHabitStore = defineStore("habit", {
   state: () => ({
     habits: [],
+    loading: false,
+    error: null,
   }),
 
   actions: {
@@ -22,25 +24,42 @@ export const useHabitStore = defineStore("habit", {
     },
 
     completeHabit(habitId) {
-      const habit = this.habits.find((h) => h.id === habitId);
-      if (habit) {
-        const today = new Date().setHours(0, 0, 0, 0);
+      this.loading = true;
+      this.error = null;
 
-        // Prevent completing the same habit multiple times a day
-        const alreadyCompletedToday = habit.completedDates?.some(
-          (date) => new Date(date).setHours(0, 0, 0, 0) === today
-        );
+      try {
+        const habit = this.habits.find((h) => h.id === habitId);
+        if (habit) {
+          const today = new Date().setHours(0, 0, 0, 0);
 
-        if (!alreadyCompletedToday) {
-          if (!habit.completedDates) habit.completedDates = [];
-          habit.completedDates.push(new Date().toISOString());
+          // Prevent completing the same habit multiple times a day
+          const alreadyCompletedToday = habit.completedDates?.some(
+            (date) => new Date(date).setHours(0, 0, 0, 0) === today
+          );
 
-          // Update streak logic here if needed, or rely on computed
+          if (!alreadyCompletedToday) {
+            if (!habit.completedDates) habit.completedDates = [];
+            habit.completedDates.push(new Date().toISOString());
 
-          // Add XP
-          const userStore = useUserStore();
-          userStore.addXP(habit.xp);
+            // Add XP
+            const userStore = useUserStore();
+            userStore.addXP(habit.xp);
+
+            // Update statistics
+            userStore.incrementStat("totalHabitsCompleted");
+
+            // Check if early morning
+            const hour = new Date().getHours();
+            if (hour < 8) {
+              userStore.incrementStat("earlyHabits");
+            }
+          }
         }
+      } catch (err) {
+        this.error = err.message || "Gagal menyelesaikan kebiasaan";
+        throw err;
+      } finally {
+        this.loading = false;
       }
     },
 

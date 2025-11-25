@@ -1,20 +1,64 @@
 {
-  "name": "Nivra",
+  "name": "Nivra - Produktivitas PWA",
   "short_name": "Nivra",
-  "start_url": "/",
+  "description": "Aplikasi produktivitas personal dengan gamifikasi untuk tracking habits, tasks, finance, dan jurnal",
+  "start_url": "/nivra-vue/?source=pwa",
+  "scope": "/nivra-vue/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#fdfdfd",
   "theme_color": "#9b89b3",
+  "categories": ["productivity", "lifestyle", "health"],
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/nivra-vue/logo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/logo.png",
+      "src": "/nivra-vue/logo.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Home",
+      "description": "Open dashboard",
+      "url": "/nivra-vue/?shortcut=dashboard",
+      "icons": [
+        {
+          "src": "/nivra-vue/logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Habits",
+      "short_name": "Habits",
+      "description": "Track your habits",
+      "url": "/nivra-vue/habits?shortcut=habits",
+      "icons": [
+        {
+          "src": "/nivra-vue/logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "short_name": "Tasks",
+      "description": "View your tasks",
+      "url": "/nivra-vue/todo?shortcut=tasks",
+      "icons": [
+        {
+          "src": "/nivra-vue/logo.png",
+          "sizes": "96x96"
+        }
+      ]
     }
   ]
 }

@@ -32,6 +32,8 @@ export const useTodoStore = defineStore(
         dueDate: "2023-10-27",
       },
     ]);
+    const loading = ref(false);
+    const error = ref(null);
 
     // Getters
     const pendingTasks = computed(
@@ -82,23 +84,42 @@ export const useTodoStore = defineStore(
     }
 
     function toggleTask(id) {
-      const task = tasks.value.find((t) => t.id === id);
-      if (task) {
-        task.completed = !task.completed;
+      loading.value = true;
+      error.value = null;
 
-        // Award XP if completed
-        if (task.completed) {
-          task.completedAt = new Date().toISOString();
-          const userStore = useUserStore();
-          let xpAmount = 10; // Default / Rendah
+      try {
+        const task = tasks.value.find((t) => t.id === id);
+        if (task) {
+          task.completed = !task.completed;
 
-          if (task.priority === "tinggi") xpAmount = 50;
-          else if (task.priority === "sedang") xpAmount = 30;
+          // Award XP if completed
+          if (task.completed) {
+            task.completedAt = new Date().toISOString();
+            const userStore = useUserStore();
+            let xpAmount = 10; // Default / Rendah
 
-          userStore.addXP(xpAmount);
-        } else {
-          delete task.completedAt;
+            if (task.priority === "tinggi") xpAmount = 50;
+            else if (task.priority === "sedang") xpAmount = 30;
+
+            userStore.addXP(xpAmount);
+
+            // Update statistics
+            userStore.incrementStat("totalTasksCompleted");
+
+            // Check if late night
+            const hour = new Date().getHours();
+            if (hour >= 22) {
+              userStore.incrementStat("lateTasks");
+            }
+          } else {
+            delete task.completedAt;
+          }
         }
+      } catch (err) {
+        error.value = err.message || "Gagal mengubah status tugas";
+        throw err;
+      } finally {
+        loading.value = false;
       }
     }
 
@@ -108,6 +129,8 @@ export const useTodoStore = defineStore(
 
     return {
       tasks,
+      loading,
+      error,
       pendingTasks,
       filteredTasks,
       todayTasks,

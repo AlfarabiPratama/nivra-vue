@@ -1,27 +1,45 @@
 <script setup>
-import { ref } from "vue";
+import { useReadingStore } from "@/store/readingStore";
+import { computed, ref } from "vue";
 
+const readingStore = useReadingStore();
 const searchQuery = ref("");
+const showAddDialog = ref(false);
 
-// Mock data for reading list
-const books = ref([
-  {
-    id: 1,
-    title: "Atomic Habits",
-    author: "James Clear",
-    cover:
-      "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-    progress: 60,
-  },
-  {
-    id: 2,
-    title: "Dune",
-    author: "Frank Herbert",
-    cover:
-      "https://images.unsplash.com/photo-1541963463532-d68292c34b19?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-    progress: 25,
-  },
-]);
+const newBook = ref({
+  title: "",
+  author: "",
+  cover: "",
+  totalPages: 0,
+});
+
+const books = computed(() => {
+  if (!searchQuery.value) return readingStore.books;
+  return readingStore.books.filter(
+    (book) =>
+      book.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchQuery.value.toLowerCase())
+  );
+});
+
+const saveBook = () => {
+  if (newBook.value.title && newBook.value.author && newBook.value.totalPages) {
+    readingStore.addBook({
+      ...newBook.value,
+      cover:
+        newBook.value.cover ||
+        "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80", // Default cover
+    });
+    showAddDialog.value = false;
+    // Reset form
+    newBook.value = {
+      title: "",
+      author: "",
+      cover: "",
+      totalPages: 0,
+    };
+  }
+};
 </script>
 
 <template>
@@ -44,7 +62,13 @@ const books = ref([
         ></v-text-field>
       </v-col>
       <v-col cols="12" md="4" class="text-right">
-        <v-btn color="primary" prepend-icon="mdi-plus" height="44" rounded="lg">
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-plus"
+          height="44"
+          rounded="lg"
+          @click="showAddDialog = true"
+        >
           Tambah Buku
         </v-btn>
       </v-col>
@@ -79,5 +103,44 @@ const books = ref([
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- Add Book Dialog -->
+    <v-dialog v-model="showAddDialog" max-width="500">
+      <v-card class="rounded-xl pa-4">
+        <v-card-title class="text-h5 font-weight-bold mb-4">
+          Tambah Buku Baru
+        </v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="newBook.title"
+            label="Judul Buku"
+            variant="outlined"
+            class="mb-2"
+          ></v-text-field>
+          <v-text-field
+            v-model="newBook.author"
+            label="Penulis"
+            variant="outlined"
+            class="mb-2"
+          ></v-text-field>
+          <v-text-field
+            v-model="newBook.totalPages"
+            label="Total Halaman"
+            type="number"
+            variant="outlined"
+            class="mb-2"
+          ></v-text-field>
+          <v-text-field
+            v-model="newBook.cover"
+            label="URL Cover (Opsional)"
+            variant="outlined"
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions class="justify-end">
+          <v-btn variant="text" @click="showAddDialog = false">Batal</v-btn>
+          <v-btn color="primary" variant="flat" @click="saveBook">Simpan</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>

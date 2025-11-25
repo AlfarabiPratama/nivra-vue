@@ -19,16 +19,29 @@ app.use(vuetify); // Use Vuetify
 
 app.mount("#app");
 
+// Enhanced Service Worker Registration
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("/src/service-worker.js") // Note: In production, this path might change depending on build
-      .then((reg) => console.log("SW registered!", reg))
-      .catch((err) => console.log("SW registration failed", err));
+      .register("/nivra-vue/service-worker.js", {
+        scope: "/nivra-vue/",
+      })
+      .then((reg) => {
+        console.log("[App] Service Worker registered successfully:", reg);
+
+        // Check for updates periodically
+        setInterval(() => {
+          reg.update();
+        }, 60000); // Check every 60 seconds
+      })
+      .catch((err) => {
+        console.error("[App] Service Worker registration failed:", err);
+      });
   });
 }
 
-// Request Notification Permission
+// Request Notification Permission (for future notifications feature)
 if ("Notification" in window && Notification.permission !== "granted") {
-  Notification.requestPermission();
+  // Don't ask immediately, wait for user interaction
+  // Notification.requestPermission();
 }
