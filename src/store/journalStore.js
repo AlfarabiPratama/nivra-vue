@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { computed, ref } from "vue";
 import { useUserStore } from "./userStore";
 
 export const useJournalStore = defineStore(
@@ -62,6 +62,10 @@ export const useJournalStore = defineStore(
       sortedEntries,
       addEntry,
       deleteEntry,
+      getUserData: () => ({ entries: entries.value }),
+      loadUserData: (data) => {
+        if (data && data.entries) entries.value = data.entries;
+      },
     };
   },
   {

@@ -114,6 +114,10 @@ export const useTodoStore = defineStore(
       addTask,
       toggleTask,
       deleteTask,
+      getUserData: () => ({ tasks: tasks.value }),
+      loadUserData: (data) => {
+        if (data && data.tasks) tasks.value = data.tasks;
+      },
     };
   },
   {

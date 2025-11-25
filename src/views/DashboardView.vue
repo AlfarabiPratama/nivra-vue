@@ -60,6 +60,7 @@
                   size="large"
                   prepend-icon="mdi-bullseye-arrow"
                   class="px-8 font-weight-bold text-medium-emphasis btn-hover border-thin"
+                  @click="$router.push('/focus')"
                 >
                   Mode Fokus
                 </v-btn>

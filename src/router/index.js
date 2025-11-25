@@ -41,6 +41,11 @@ const routes = [
     name: "Settings",
     component: () => import("../views/SettingsView.vue"),
   },
+  {
+    path: "/focus",
+    name: "Focus",
+    component: () => import("../views/FocusView.vue"),
+  },
 ];
 
 const router = createRouter({

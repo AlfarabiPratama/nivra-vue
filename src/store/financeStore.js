@@ -110,6 +110,10 @@ export const useFinanceStore = defineStore(
       weekOverWeekChange,
       addTransaction,
       deleteTransaction,
+      getUserData: () => ({ transactions: transactions.value }),
+      loadUserData: (data) => {
+        if (data && data.transactions) transactions.value = data.transactions;
+      },
     };
   },
   {

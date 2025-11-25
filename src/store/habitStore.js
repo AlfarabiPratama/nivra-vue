@@ -47,6 +47,14 @@ export const useHabitStore = defineStore("habit", {
     deleteHabit(habitId) {
       this.habits = this.habits.filter((h) => h.id !== habitId);
     },
+
+    getUserData() {
+      return { habits: this.habits };
+    },
+
+    loadUserData(data) {
+      if (data && data.habits) this.habits = data.habits;
+    },
   },
   persist: true,
 });

@@ -2,27 +2,30 @@
   <div class="view-container">
     <h2>Pengaturan</h2>
 
+    <!-- Theme Settings -->
     <div class="card">
-      <h3>Tampilan</h3>
-      <div class="setting-item">
-        <label class="setting-label">
-          <input type="checkbox" v-model="darkMode" @change="toggleTheme" />
-          <span>Mode Gelap</span>
-        </label>
+      <h3>Tampilan & Tema</h3>
+      <div class="themes-grid">
+        <div
+          v-for="t in themeOptions"
+          :key="t.value"
+          class="theme-option"
+          :class="{ active: currentTheme === t.value }"
+          @click="setTheme(t.value)"
+        >
+          <div class="theme-preview" :style="{ background: t.color }">
+            <div class="theme-check" v-if="currentTheme === t.value">
+              <v-icon icon="mdi-check" color="white"></v-icon>
+            </div>
+          </div>
+          <span class="theme-name">{{ t.label }}</span>
+        </div>
       </div>
     </div>
 
+    <!-- Navigation Settings -->
     <div class="card">
       <h3>Navigasi</h3>
-      <div class="setting-item">
-        <label class="setting-label">
-          <span>Ukuran Sidebar (Desktop)</span>
-        </label>
-        <p class="setting-desc">
-          Klik tombol « di tepi sidebar untuk menyembunyikan/menampilkan
-        </p>
-      </div>
-
       <div class="setting-item">
         <label class="setting-label">
           <span>Item Navigasi Bawah (Mobile)</span>
@@ -41,25 +44,132 @@
       </div>
     </div>
 
+    <!-- Data Management -->
+    <div class="card">
+      <h3>Manajemen Data</h3>
+      <p class="setting-desc mb-4">
+        Simpan data Anda secara lokal atau pindahkan ke perangkat lain.
+      </p>
+
+      <div class="d-flex gap-3 flex-wrap">
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-download"
+          variant="flat"
+          @click="handleExport"
+        >
+          Backup Data (JSON)
+        </v-btn>
+
+        <v-btn
+          color="secondary"
+          prepend-icon="mdi-upload"
+          variant="tonal"
+          @click="triggerImport"
+        >
+          Restore Data
+        </v-btn>
+        <input
+          type="file"
+          ref="fileInput"
+          accept=".json"
+          style="display: none"
+          @change="handleImport"
+        />
+      </div>
+    </div>
+
+    <!-- About -->
     <div class="card">
       <h3>Tentang</h3>
-      <p><strong>Nivra</strong> - PWA Produktivitas Pribadi</p>
-      <p style="color: #666; font-size: 0.9rem">Versi 0.1.0</p>
+      <div class="d-flex align-center mb-2">
+        <v-img
+          src="/icons/icon-192x192.png"
+          width="48"
+          height="48"
+          class="mr-3 rounded-lg"
+        ></v-img>
+        <div>
+          <h4 class="text-h6 font-weight-bold">Nivra</h4>
+          <p class="text-caption text-medium-emphasis">
+            PWA Produktivitas Pribadi v0.1.0
+          </p>
+        </div>
+      </div>
+      <p class="text-body-2 text-medium-emphasis mt-2">
+        Dibuat dengan ❤️ menggunakan Vue 3 & Vuetify.
+      </p>
     </div>
+
+    <!-- Restore Confirmation Dialog -->
+    <v-dialog v-model="showRestoreDialog" max-width="400">
+      <v-card>
+        <v-card-title class="text-h5 font-weight-bold"
+          >Konfirmasi Restore</v-card-title
+        >
+        <v-card-text>
+          Tindakan ini akan <strong>menimpa</strong> semua data yang ada saat
+          ini dengan data dari file backup. Apakah Anda yakin ingin melanjutkan?
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showRestoreDialog = false">Batal</v-btn>
+          <v-btn color="error" variant="flat" @click="confirmRestore"
+            >Ya, Restore Data</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Snackbar -->
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
+      {{ snackbar.message }}
+      <template v-slot:actions>
+        <v-btn variant="text" @click="snackbar.show = false">Tutup</v-btn>
+      </template>
+    </v-snackbar>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { useFinanceStore } from "@/store/financeStore";
+import { useHabitStore } from "@/store/habitStore";
+import { useJournalStore } from "@/store/journalStore";
+import { useTodoStore } from "@/store/todoStore";
+import { useUserStore } from "@/store/userStore";
+import { onMounted, ref } from "vue";
 import { useTheme } from "vuetify";
 
 const theme = useTheme();
-const darkMode = ref(false);
-const bottomNavSize = ref(5);
+const userStore = useUserStore();
+const todoStore = useTodoStore();
+const habitStore = useHabitStore();
+const financeStore = useFinanceStore();
+const journalStore = useJournalStore();
 
-const toggleTheme = () => {
-  theme.global.name.value = darkMode.value ? "dark" : "light";
-  localStorage.setItem("darkMode", darkMode.value);
+const currentTheme = ref("ocean");
+const bottomNavSize = ref(5);
+const fileInput = ref(null);
+const showRestoreDialog = ref(false);
+const pendingImportData = ref(null);
+
+const snackbar = ref({
+  show: false,
+  message: "",
+  color: "success",
+});
+
+const themeOptions = [
+  { value: "ocean", label: "Ocean Mist", color: "#3B82F6" },
+  { value: "forest", label: "Forest Whisper", color: "#2E7D32" },
+  { value: "sunset", label: "Golden Hour", color: "#E64A19" },
+  { value: "midnight", label: "Midnight", color: "#0F172A" },
+];
+
+const setTheme = (themeName) => {
+  currentTheme.value = themeName;
+  theme.global.name.value = themeName;
+  localStorage.setItem("selectedTheme", themeName);
 };
 
 const setBottomNavSize = (size) => {
@@ -67,11 +177,100 @@ const setBottomNavSize = (size) => {
   localStorage.setItem("bottomNavSize", size);
 };
 
+// Backup Logic
+const handleExport = () => {
+  try {
+    const data = {
+      version: "1.0",
+      timestamp: new Date().toISOString(),
+      user: userStore.getUserData(),
+      todo: todoStore.getUserData(),
+      habit: habitStore.getUserData(),
+      finance: financeStore.getUserData(),
+      journal: journalStore.getUserData(),
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `nivra-backup-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showSnackbar("Backup berhasil diunduh!", "success");
+  } catch (error) {
+    console.error("Export error:", error);
+    showSnackbar("Gagal membuat backup.", "error");
+  }
+};
+
+// Restore Logic
+const triggerImport = () => {
+  fileInput.value.click();
+};
+
+const handleImport = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      // Validate basic structure
+      if (!data.user || !data.todo) {
+        throw new Error("Format file tidak valid");
+      }
+      pendingImportData.value = data;
+      showRestoreDialog.value = true;
+    } catch (error) {
+      console.error("Import error:", error);
+      showSnackbar("File backup tidak valid.", "error");
+    }
+    // Reset input
+    event.target.value = "";
+  };
+  reader.readAsText(file);
+};
+
+const confirmRestore = () => {
+  if (pendingImportData.value) {
+    try {
+      const data = pendingImportData.value;
+      userStore.loadUserData(data.user);
+      todoStore.loadUserData(data.todo);
+      habitStore.loadUserData(data.habit);
+      financeStore.loadUserData(data.finance);
+      journalStore.loadUserData(data.journal);
+
+      showSnackbar("Data berhasil dipulihkan!", "success");
+      showRestoreDialog.value = false;
+      pendingImportData.value = null;
+    } catch (error) {
+      console.error("Restore error:", error);
+      showSnackbar("Gagal memulihkan data.", "error");
+    }
+  }
+};
+
+const showSnackbar = (msg, color = "success") => {
+  snackbar.value = {
+    show: true,
+    message: msg,
+    color: color,
+  };
+};
+
 onMounted(() => {
-  const savedTheme = localStorage.getItem("darkMode");
-  if (savedTheme === "true") {
-    darkMode.value = true;
-    theme.global.name.value = "dark";
+  const savedTheme = localStorage.getItem("selectedTheme");
+  if (savedTheme) {
+    currentTheme.value = savedTheme;
+    theme.global.name.value = savedTheme;
   }
 
   const savedNavSize = localStorage.getItem("bottomNavSize");
@@ -85,61 +284,89 @@ onMounted(() => {
 .card h3 {
   margin-top: 0;
   margin-bottom: 16px;
-  color: var(--primary);
+  color: rgb(var(--v-theme-primary));
   font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.themes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 16px;
+}
+
+.theme-option {
+  cursor: pointer;
+  text-align: center;
+}
+
+.theme-preview {
+  height: 60px;
+  border-radius: 16px;
+  margin-bottom: 8px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-option:hover .theme-preview {
+  transform: translateY(-4px);
+}
+
+.theme-option.active .theme-preview {
+  ring: 2px solid rgb(var(--v-theme-primary));
+  transform: scale(1.05);
+}
+
+.theme-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .setting-item {
   margin-bottom: 20px;
 }
 
-.setting-item:last-child {
-  margin-bottom: 0;
-}
-
 .setting-label {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.setting-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .setting-desc {
-  margin: 8px 0 0 0;
-  font-size: 0.85rem;
-  color: #666;
+  font-size: 0.9rem;
+  color: rgb(var(--v-theme-medium-emphasis));
+  line-height: 1.5;
 }
 
 .nav-size-options {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
 }
 
 .size-btn {
   padding: 8px 16px;
-  border: 2px solid var(--primary);
-  background: transparent;
-  color: var(--primary);
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  background: rgb(var(--v-theme-surface));
+  color: rgb(var(--v-theme-on-surface));
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .size-btn:hover {
-  background: rgba(155, 137, 179, 0.1);
+  background: rgba(var(--v-theme-primary), 0.05);
 }
 
 .size-btn.active {
-  background: var(--primary);
-  color: white;
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  border-color: rgb(var(--v-theme-primary));
 }
 </style>
