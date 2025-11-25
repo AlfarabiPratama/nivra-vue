@@ -1,0 +1,37 @@
+{
+  "recommendations": [
+    // Essential for Next.js + TypeScript development
+    "ms-vscode.vscode-typescript-next",
+    "bradlc.vscode-tailwindcss",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-eslint",
+    
+    // Testing and debugging
+    "orta.vscode-jest",
+    "ms-vscode.vscode-json",
+    
+    // Enhanced development experience
+    "christian-kohler.path-intellisense",
+    "formulahendry.auto-rename-tag",
+    "ms-vscode.vscode-typescript-next",
+    
+    // Git and productivity
+    "mhutchie.git-graph",
+    "eamodio.gitlens",
+    
+    // React and Next.js specific
+    "burkeholland.simple-react-snippets",
+    "ms-vscode.vscode-react-native",
+    
+    // Code quality
+    "streetsidesoftware.code-spell-checker",
+    "yzhang.markdown-all-in-one",
+    
+    // Accessibility
+    "deque-systems.vscode-axe-linter"
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode.vscode-css",
+    "hookyqr.beautify"
+  ]
+}

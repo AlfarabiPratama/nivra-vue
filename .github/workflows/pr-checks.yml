@@ -1,0 +1,295 @@
+name: PR Quality Checks (Disabled)
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# Cancel in-progress runs for the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-type-check:
+    if: false # Disabled - no lint/type-check scripts presently
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript type check
+        run: npm run type-check
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          if grep -r "TODO\|FIXME" src/ --exclude-dir=node_modules; then
+            echo "⚠️ Found TODO/FIXME comments. Please resolve before merging."
+            exit 1
+          else
+            echo "✅ No TODO/FIXME comments found"
+          fi
+
+  # Unit tests
+  unit-tests:
+    if: false # Disabled - no test setup yet
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint-and-type-check
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm run test:ci
+
+      - name: Upload test coverage to artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-coverage
+          path: coverage/
+          retention-days: 7
+
+      - name: Comment PR with coverage
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            try {
+              const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+              const { lines, statements, functions, branches } = coverage.total;
+              
+              const comment = `## 📊 Test Coverage Report
+              
+              | Metric | Percentage | Status |
+              |--------|------------|--------|
+              | Lines | ${lines.pct}% | ${lines.pct >= 80 ? '✅' : '❌'} |
+              | Statements | ${statements.pct}% | ${statements.pct >= 80 ? '✅' : '❌'} |
+              | Functions | ${functions.pct}% | ${functions.pct >= 80 ? '✅' : '❌'} |
+              | Branches | ${branches.pct}% | ${branches.pct >= 80 ? '✅' : '❌'} |
+              
+              ${lines.pct >= 80 && statements.pct >= 80 && functions.pct >= 80 && branches.pct >= 80 
+                ? '✅ Coverage thresholds met!' 
+                : '❌ Coverage below 80% threshold'}`;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            } catch (error) {
+              console.log('Could not read coverage report:', error.message);
+            }
+
+  # Build check
+  build-check:
+    if: false # Disabled (replaced by simple build job in ci.yml)
+    name: Build Verification
+    runs-on: ubuntu-latest
+    needs: lint-and-type-check
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+        env:
+          # Sentry configuration for build
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      - name: Check bundle size
+        run: |
+          # Check if build output exists
+          if [ ! -d ".next" ]; then
+            echo "❌ Build output not found"
+            exit 1
+          fi
+
+          # Get bundle size (optional - requires additional setup)
+          echo "✅ Build completed successfully"
+          du -sh .next/ || echo "Build size check completed"
+
+  # Security audit
+  security-audit:
+    if: false # Disabled
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - name: Run npm audit
+        run: |
+          npm audit --audit-level=moderate || echo "Security vulnerabilities found - please review"
+
+      - name: Check for hardcoded secrets
+        run: |
+          # Simple secret detection (can be enhanced with tools like truffleHog)
+          if grep -r "password\|secret\|token\|key" src/ --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" | grep -v "placeholder\|example\|demo"; then
+            echo "⚠️ Potential hardcoded secrets found. Please review."
+          else
+            echo "✅ No obvious hardcoded secrets found"
+          fi
+
+  # Accessibility check
+  accessibility-check:
+    if: false # Disabled
+    name: Accessibility Audit
+    runs-on: ubuntu-latest
+    needs: build-check
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install accessibility tools
+        run: |
+          npm install -g @axe-core/cli
+          npm install -g pa11y-ci
+
+      - name: Build and start application
+        run: |
+          npm run build
+          npm run start:preview &
+          sleep 10
+          curl --retry 10 --retry-delay 3 --retry-connrefused http://localhost:3000
+
+      - name: Run accessibility tests
+        run: |
+          # Run axe-core accessibility tests
+          axe http://localhost:3000 --exit || echo "Accessibility issues found"
+          axe http://localhost:3000/dashboard --exit || echo "Dashboard accessibility issues found"
+
+          # Create pa11y config
+          cat > .pa11yci.json << EOF
+          {
+            "urls": [
+              "http://localhost:3000",
+              "http://localhost:3000/dashboard"
+            ],
+            "standard": "WCAG2AA",
+            "threshold": 0
+          }
+          EOF
+
+          # Run pa11y tests
+          pa11y-ci || echo "Pa11y accessibility issues found"
+
+  # PR summary
+  pr-summary:
+    if: false # Disabled
+    name: PR Summary
+    runs-on: ubuntu-latest
+    needs:
+      [
+        lint-and-type-check,
+        unit-tests,
+        build-check,
+        security-audit,
+        accessibility-check,
+      ]
+
+    steps:
+      - name: Create PR summary comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const jobs = [
+              { name: 'Lint & Type Check', status: '${{ needs.lint-and-type-check.result }}' },
+              { name: 'Unit Tests', status: '${{ needs.unit-tests.result }}' },
+              { name: 'Build Check', status: '${{ needs.build-check.result }}' },
+              { name: 'Security Audit', status: '${{ needs.security-audit.result }}' },
+              { name: 'Accessibility Check', status: '${{ needs.accessibility-check.result }}' }
+            ];
+
+            const getStatusEmoji = (status) => {
+              switch(status) {
+                case 'success': return '✅';
+                case 'failure': return '❌';
+                case 'skipped': return '⏭️';
+                default: return '⏸️';
+              }
+            };
+
+            const allPassed = jobs.every(job => job.status === 'success');
+
+            const comment = `## 🔍 PR Quality Check Results
+
+            | Check | Status |
+            |-------|--------|
+            ${jobs.map(job => `| ${job.name} | ${getStatusEmoji(job.status)} ${job.status} |`).join('\n')}
+
+            ${allPassed 
+              ? '🎉 All quality checks passed! This PR is ready for review.' 
+              : '⚠️ Some checks failed. Please review the failed jobs above.'}
+
+            **Next Steps:**
+            - ${allPassed ? '✅' : '❌'} Automated checks completed
+            - ⏳ Waiting for Lighthouse CI results
+            - ⏳ Waiting for Playwright E2E tests
+            - ⏳ Code review required
+
+            > This comment will be updated when all checks complete.`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

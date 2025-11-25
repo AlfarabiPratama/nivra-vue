@@ -1,0 +1,106 @@
+name: Lighthouse CI (Disabled)
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lighthouse-ci:
+    if: false # Disabled for current Vue + Vite minimal setup
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.12.x
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application server
+        run: |
+          npm run start:preview &
+          sleep 10
+          curl --retry 10 --retry-delay 3 --retry-connrefused http://localhost:3000
+
+      - name: Run Lighthouse CI
+        run: lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+          LHCI_GITHUB_TOKEN: ${{ secrets.LHCI_GITHUB_TOKEN }}
+
+      - name: Upload Lighthouse CI results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-results
+          path: |
+            .lighthouseci/
+            lhci_reports/
+          retention-days: 30
+
+      - name: Comment PR with Lighthouse results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Try to read Lighthouse CI results
+            try {
+              const resultsPath = '.lighthouseci/lhr';
+              if (fs.existsSync(resultsPath)) {
+                const files = fs.readdirSync(resultsPath);
+                const latestReport = files
+                  .filter(f => f.endsWith('.json'))
+                  .sort()
+                  .pop();
+                  
+                if (latestReport) {
+                  const reportPath = path.join(resultsPath, latestReport);
+                  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+                  
+                  const scores = {
+                    performance: Math.round(report.categories.performance.score * 100),
+                    accessibility: Math.round(report.categories.accessibility.score * 100),
+                    'best-practices': Math.round(report.categories['best-practices'].score * 100),
+                    seo: Math.round(report.categories.seo.score * 100)
+                  };
+                  
+                  const comment = `## 🔍 Lighthouse CI Results
+
+            | Category | Score |
+            |----------|-------|
+            | Performance | ${scores.performance}/100 |
+            | Accessibility | ${scores.accessibility}/100 |
+            | Best Practices | ${scores['best-practices']}/100 |
+            | SEO | ${scores.seo}/100 |
+
+            > Reports are available in the workflow artifacts.`;
+                  
+                  github.rest.issues.createComment({
+                    issue_number: context.issue.number,
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    body: comment
+                  });
+                }
+              }
+            } catch (error) {
+              console.log('Could not read Lighthouse results:', error.message);
+            }
