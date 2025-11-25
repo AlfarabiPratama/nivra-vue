@@ -38,6 +38,46 @@
   
   // Hide certain files from explorer
   "files.exclude": {
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  
+  // TypeScript settings
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  
+  // Tailwind CSS settings
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  },
+  "tailwindCSS.experimental.classRegex": [
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+  ],
+  
+  // File associations
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  
+  // Jest settings
+  "jest.autoRun": "watch",
+  "jest.showCoverageOnLoad": true,
+  
+  // Emmet for JSX
+  "emmet.includeLanguages": {
+    "typescript": "html",
+    "typescriptreact": "html"
+  },
+  
+  // Hide certain files from explorer
+  "files.exclude": {
     "**/node_modules": true,
     "**/.next": true,
     "**/coverage": true
@@ -48,7 +88,11 @@
     "Nivra",
     "tailwindcss",
     "clsx",
-    "forwardref"
+    "forwardref",
+    "Vitest",
+    "vuetify",
+    "materialdesignicons",
+    "chartjs"
   ],
   "prisma.pinToPrisma6": true
 }

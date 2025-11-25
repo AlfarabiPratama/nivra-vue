@@ -11,6 +11,8 @@ jobs:
     if: false # Disabled - using manual deploy / not configured
     name: Deploy to Vercel
     runs-on: ubuntu-latest
+    outputs:
+      deployment_url: ${{ steps.deploy.outputs.deployment_url }}
 
     steps:
       - name: Checkout repository
