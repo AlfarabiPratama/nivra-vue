@@ -137,8 +137,16 @@ import { useHabitStore } from "@/store/habitStore";
 import { useJournalStore } from "@/store/journalStore";
 import { useTodoStore } from "@/store/todoStore";
 import { useUserStore } from "@/store/userStore";
+import { useFocusStore } from "@/store/focusStore";
 import { onMounted, ref } from "vue";
 import { useTheme } from "vuetify";
+import {
+  exportAllData,
+  downloadJSON,
+  readJSONFile,
+  importAllData,
+  validateImportData,
+} from "@/utils/dataBackup";
 
 const theme = useTheme();
 const userStore = useUserStore();
@@ -146,6 +154,7 @@ const todoStore = useTodoStore();
 const habitStore = useHabitStore();
 const financeStore = useFinanceStore();
 const journalStore = useJournalStore();
+const focusStore = useFocusStore();
 
 const currentTheme = ref("ocean");
 const bottomNavSize = ref(5);
@@ -177,35 +186,15 @@ const setBottomNavSize = (size) => {
   localStorage.setItem("bottomNavSize", size);
 };
 
-// Backup Logic
+// Enhanced Backup Logic with validation
 const handleExport = () => {
   try {
-    const data = {
-      version: "1.0",
-      timestamp: new Date().toISOString(),
-      user: userStore.getUserData(),
-      todo: todoStore.getUserData(),
-      habit: habitStore.getUserData(),
-      finance: financeStore.getUserData(),
-      journal: journalStore.getUserData(),
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `nivra-backup-${new Date().toISOString().split("T")[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    showSnackbar("Backup berhasil diunduh!", "success");
+    const data = exportAllData();
+    downloadJSON(data);
+    showSnackbar("✅ Backup berhasil diunduh!", "success");
   } catch (error) {
     console.error("Export error:", error);
-    showSnackbar("Gagal membuat backup.", "error");
+    showSnackbar("❌ Gagal membuat backup: " + error.message, "error");
   }
 };
 
@@ -214,46 +203,53 @@ const triggerImport = () => {
   fileInput.value.click();
 };
 
-const handleImport = (event) => {
+// Enhanced Restore Logic with validation
+const handleImport = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const data = JSON.parse(e.target.result);
-      // Validate basic structure
-      if (!data.user || !data.todo) {
-        throw new Error("Format file tidak valid");
-      }
-      pendingImportData.value = data;
-      showRestoreDialog.value = true;
-    } catch (error) {
-      console.error("Import error:", error);
-      showSnackbar("File backup tidak valid.", "error");
+  try {
+    const data = await readJSONFile(file);
+
+    // Validate data structure
+    const validation = validateImportData(data);
+    if (!validation.valid) {
+      showSnackbar(
+        "❌ File tidak valid: " + validation.errors.join(", "),
+        "error"
+      );
+      event.target.value = "";
+      return;
     }
-    // Reset input
-    event.target.value = "";
-  };
-  reader.readAsText(file);
+
+    // Store for confirmation
+    pendingImportData.value = data;
+    showRestoreDialog.value = true;
+  } catch (error) {
+    console.error("Import error:", error);
+    showSnackbar("❌ Gagal membaca file: " + error.message, "error");
+  }
+
+  // Reset input
+  event.target.value = "";
 };
 
-const confirmRestore = () => {
+const confirmRestore = async () => {
   if (pendingImportData.value) {
     try {
-      const data = pendingImportData.value;
-      userStore.loadUserData(data.user);
-      todoStore.loadUserData(data.todo);
-      habitStore.loadUserData(data.habit);
-      financeStore.loadUserData(data.finance);
-      journalStore.loadUserData(data.journal);
+      await importAllData(pendingImportData.value);
 
-      showSnackbar("Data berhasil dipulihkan!", "success");
+      showSnackbar("✅ Data berhasil dipulihkan!", "success");
       showRestoreDialog.value = false;
       pendingImportData.value = null;
+
+      // Reload page to reflect changes
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error("Restore error:", error);
-      showSnackbar("Gagal memulihkan data.", "error");
+      showSnackbar("❌ Gagal memulihkan data: " + error.message, "error");
     }
   }
 };

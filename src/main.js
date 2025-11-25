@@ -23,8 +23,8 @@ app.mount("#app");
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("/nivra-vue/service-worker.js", {
-        scope: "/nivra-vue/",
+      .register("/service-worker.js", {
+        scope: "/",
       })
       .then((reg) => {
         console.log("[App] Service Worker registered successfully:", reg);
