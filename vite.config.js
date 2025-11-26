@@ -4,7 +4,7 @@ import { defineConfig } from "vite";
 import vuetify from "vite-plugin-vuetify";
 
 export default defineConfig({
-  base: "/", // Changed from "/nivra-vue/" for Vercel deployment
+  base: "/nivra-vue/", // GitHub Pages base path (repo name)
   plugins: [
     vue(),
     vuetify({ autoImport: true }), // Enabled by default
