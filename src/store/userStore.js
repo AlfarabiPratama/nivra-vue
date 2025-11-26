@@ -13,6 +13,12 @@ export const useUserStore = defineStore("user", {
     streak: 0,
     xpToNextLevel: 100,
 
+    // Profile
+    name: "Pengguna Baru",
+    nickname: "User",
+    title: "Productivity Enthusiast",
+    avatar: "mdi-account-circle",
+
     // Achievements
     achievements: [], // Array of unlocked achievement IDs
 
@@ -46,6 +52,13 @@ export const useUserStore = defineStore("user", {
   actions: {
     calculateNextLevel() {
       this.xpToNextLevel = this.level * 100;
+    },
+
+    updateProfile(profileData) {
+      if (profileData.name) this.name = profileData.name;
+      if (profileData.nickname) this.nickname = profileData.nickname;
+      if (profileData.title) this.title = profileData.title;
+      if (profileData.avatar) this.avatar = profileData.avatar;
     },
 
     addXP(amount) {
@@ -218,6 +231,12 @@ export const useUserStore = defineStore("user", {
         badges: this.badges,
         streak: this.streak,
         xpToNextLevel: this.xpToNextLevel,
+        // Profile
+        name: this.name,
+        nickname: this.nickname,
+        title: this.title,
+        avatar: this.avatar,
+
         achievements: this.achievements,
         statistics: this.statistics,
         dailyChallenge: this.dailyChallenge,
@@ -234,6 +253,13 @@ export const useUserStore = defineStore("user", {
         this.badges = data.badges || [];
         this.streak = data.streak || 0;
         this.xpToNextLevel = data.xpToNextLevel || 100;
+
+        // Profile
+        this.name = data.name || "Pengguna Baru";
+        this.nickname = data.nickname || "User";
+        this.title = data.title || "Productivity Enthusiast";
+        this.avatar = data.avatar || "mdi-account-circle";
+
         this.achievements = data.achievements || [];
         this.statistics = data.statistics || {
           totalHabitsCompleted: 0,

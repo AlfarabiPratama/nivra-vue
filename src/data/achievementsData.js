@@ -19,7 +19,7 @@ export const ACHIEVEMENTS = {
     category: ACHIEVEMENT_CATEGORIES.HABITS,
     name: "Langkah Pertama",
     description: "Selesaikan habit pertama kamu",
-    icon: "mdi-foot-print",
+    icon: "/icons/3d/star.png", // 3D star for first achievement
     condition: { type: "habits_completed", value: 1 },
     xpReward: 50,
   },
@@ -28,7 +28,7 @@ export const ACHIEVEMENTS = {
     category: ACHIEVEMENT_CATEGORIES.HABITS,
     name: "Penggemar Kebiasaan",
     description: "Selesaikan 10 habits",
-    icon: "mdi-heart",
+    icon: "/icons/3d/fire.png", // 3D fire for enthusiasm
     condition: { type: "habits_completed", value: 10 },
     xpReward: 100,
   },
@@ -37,7 +37,7 @@ export const ACHIEVEMENTS = {
     category: ACHIEVEMENT_CATEGORIES.HABITS,
     name: "Century Club",
     description: "Selesaikan 100 habits",
-    icon: "mdi-crown",
+    icon: "/icons/3d/trophy.png", // 3D trophy for mastery
     condition: { type: "habits_completed", value: 100 },
     xpReward: 500,
   },
@@ -77,7 +77,7 @@ export const ACHIEVEMENTS = {
     category: ACHIEVEMENT_CATEGORIES.STREAKS,
     name: "7 Days Strong",
     description: "Pertahankan streak 7 hari",
-    icon: "mdi-fire",
+    icon: "/icons/3d/fire.png", // 3D fire
     condition: { type: "streak", value: 7 },
     xpReward: 200,
   },
@@ -86,7 +86,7 @@ export const ACHIEVEMENTS = {
     category: ACHIEVEMENT_CATEGORIES.STREAKS,
     name: "Month Champion",
     description: "Pertahankan streak 30 hari",
-    icon: "mdi-medal",
+    icon: "/icons/3d/medal.png", // 3D medal
     condition: { type: "streak", value: 30 },
     xpReward: 1000,
   },
@@ -95,7 +95,7 @@ export const ACHIEVEMENTS = {
     category: ACHIEVEMENT_CATEGORIES.STREAKS,
     name: "Centurion",
     description: "Pertahankan streak 100 hari",
-    icon: "mdi-trophy",
+    icon: "/icons/3d/trophy.png", // 3D trophy
     condition: { type: "streak", value: 100 },
     xpReward: 5000,
   },
@@ -106,7 +106,7 @@ export const ACHIEVEMENTS = {
     category: ACHIEVEMENT_CATEGORIES.LEVELS,
     name: "Rising Star",
     description: "Capai Level 5",
-    icon: "mdi-star",
+    icon: "/icons/3d/star.png", // 3D star
     condition: { type: "level", value: 5 },
     xpReward: 100,
   },
@@ -115,7 +115,7 @@ export const ACHIEVEMENTS = {
     category: ACHIEVEMENT_CATEGORIES.LEVELS,
     name: "Determined",
     description: "Capai Level 10",
-    icon: "mdi-star-four-points",
+    icon: "/icons/3d/medal.png", // 3D medal for significant achievement
     condition: { type: "level", value: 10 },
     xpReward: 300,
   },
@@ -124,7 +124,7 @@ export const ACHIEVEMENTS = {
     category: ACHIEVEMENT_CATEGORIES.LEVELS,
     name: "Elite",
     description: "Capai Level 25",
-    icon: "mdi-shield-star",
+    icon: "/icons/3d/trophy.png", // 3D trophy for elite status
     condition: { type: "level", value: 25 },
     xpReward: 1000,
   },

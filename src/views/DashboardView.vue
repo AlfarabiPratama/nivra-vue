@@ -49,7 +49,7 @@
                   size="large"
                   prepend-icon="mdi-plus"
                   class="px-8 font-weight-bold btn-hover"
-                  @click="addNewHabit"
+                  @click="$router.push('/habits')"
                 >
                   Kebiasaan Baru
                 </v-btn>
@@ -363,17 +363,19 @@
                   class="stat-box pa-4 rounded-xl bg-surface h-100 d-flex flex-column justify-center align-center text-center border-thin hover-lift"
                 >
                   <v-icon
-                    icon="mdi-brain"
+                    icon="mdi-timer-outline"
                     color="primary"
                     class="mb-2"
                   ></v-icon>
                   <div
                     class="text-caption text-medium-emphasis font-weight-bold"
                   >
-                    INTELEK
+                    TOTAL FOKUS
                   </div>
                   <div class="text-h5 font-weight-black text-on-surface">
-                    12
+                    {{
+                      Math.round(userStore.statistics.totalFocusMinutes / 60)
+                    }}h
                   </div>
                 </div>
               </v-col>
@@ -382,16 +384,18 @@
                   class="stat-box pa-4 rounded-xl bg-surface h-100 d-flex flex-column justify-center align-center text-center border-thin hover-lift"
                 >
                   <v-icon
-                    icon="mdi-arm-flex"
-                    color="error"
+                    icon="mdi-checkbox-marked-circle-outline"
+                    color="secondary"
                     class="mb-2"
                   ></v-icon>
                   <div
                     class="text-caption text-medium-emphasis font-weight-bold"
                   >
-                    KEKUATAN
+                    TUGAS SELESAI
                   </div>
-                  <div class="text-h5 font-weight-black text-on-surface">8</div>
+                  <div class="text-h5 font-weight-black text-on-surface">
+                    {{ userStore.statistics.totalTasksCompleted }}
+                  </div>
                 </div>
               </v-col>
             </v-row>
@@ -419,7 +423,7 @@
                     PENGELUARAN HARIAN
                   </div>
                   <div class="text-h6 font-weight-black text-on-surface">
-                    Rp 150.000
+                    Rp {{ formatCurrency(todayExpense) }}
                   </div>
                 </div>
               </div>
@@ -429,6 +433,7 @@
                 variant="flat"
                 color="success"
                 class="rounded-lg"
+                @click="$router.push('/finance')"
               ></v-btn>
             </div>
 
@@ -477,7 +482,7 @@
                 variant="text"
                 size="large"
                 :class="{ 'mood-selected': selectedMood === index }"
-                @click="selectedMood = index"
+                @click="saveMood(index)"
                 class="mood-btn"
               >
                 <span class="text-h4 emoji-text">{{ emoji }}</span>
@@ -508,6 +513,157 @@
             <SkeletonLoader variant="widget" />
           </template>
         </Suspense>
+      </v-col>
+    </v-row>
+
+    <!-- Row 2.7: Productivity Charts -->
+    <v-row class="mt-2">
+      <!-- Habit Trend Chart -->
+      <v-col cols="12" md="6">
+        <v-card class="ocean-card pa-5 bg-surface-soft" elevation="0">
+          <div class="d-flex justify-space-between align-center mb-4">
+            <div>
+              <div class="text-caption text-medium-emphasis font-weight-bold">
+                TREN KEBIASAAN
+              </div>
+              <div class="text-h6 font-weight-bold">7 Hari Terakhir</div>
+            </div>
+            <v-icon icon="mdi-chart-bar" color="primary"></v-icon>
+          </div>
+          <ProductivityChart
+            :data="habitTrendData"
+            :labels="weekLabels"
+            type="bar"
+            :height="180"
+            color="rgb(var(--v-theme-primary))"
+          />
+        </v-card>
+      </v-col>
+
+      <!-- Task Completion Chart -->
+      <v-col cols="12" md="6">
+        <v-card class="ocean-card pa-5 bg-surface-soft" elevation="0">
+          <div class="d-flex justify-space-between align-center mb-4">
+            <div>
+              <div class="text-caption text-medium-emphasis font-weight-bold">
+                PRODUKTIVITAS TUGAS
+              </div>
+              <div class="text-h6 font-weight-bold">Minggu Ini</div>
+            </div>
+            <v-icon icon="mdi-chart-line" color="secondary"></v-icon>
+          </div>
+          <ProductivityChart
+            :data="taskTrendData"
+            :labels="weekLabels"
+            type="line"
+            :height="180"
+            color="rgb(var(--v-theme-secondary))"
+            color-name="secondary"
+          />
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Row 2.8: Advanced Analytics (Top Habits & Weekly Stats) -->
+    <v-row class="mt-2">
+      <!-- Top 3 Consistent Habits -->
+      <v-col cols="12" md="6">
+        <v-card class="ocean-card pa-5 bg-surface-soft h-100" elevation="0">
+          <div class="d-flex justify-space-between align-center mb-4">
+            <div>
+              <div class="text-caption text-medium-emphasis font-weight-bold">
+                TOP PERFORMA
+              </div>
+              <div class="text-h6 font-weight-bold">Kebiasaan Terbaik</div>
+            </div>
+            <v-icon icon="mdi-trophy" color="warning"></v-icon>
+          </div>
+
+          <div v-if="topHabits.length > 0">
+            <div
+              v-for="(habit, index) in topHabits"
+              :key="habit.id"
+              class="d-flex align-center mb-3"
+            >
+              <div
+                class="mr-3 font-weight-black text-h6"
+                :class="index === 0 ? 'text-warning' : 'text-medium-emphasis'"
+              >
+                #{{ index + 1 }}
+              </div>
+              <div class="flex-grow-1">
+                <div class="font-weight-bold">{{ habit.title }}</div>
+                <v-progress-linear
+                  :model-value="
+                    (habit.completionCount / maxHabitCompletion) * 100
+                  "
+                  height="6"
+                  rounded
+                  :color="index === 0 ? 'warning' : 'primary'"
+                  class="mt-1"
+                ></v-progress-linear>
+              </div>
+              <div class="ml-3 text-caption font-weight-bold">
+                {{ habit.completionCount }}x
+              </div>
+            </div>
+          </div>
+          <div v-else class="text-center text-medium-emphasis py-4">
+            Belum ada data kebiasaan yang cukup.
+          </div>
+        </v-card>
+      </v-col>
+
+      <!-- Weekly Stats & Best Streak -->
+      <v-col cols="12" md="6">
+        <v-row dense class="h-100">
+          <v-col cols="12">
+            <v-card class="ocean-card pa-4 bg-surface-soft mb-2" elevation="0">
+              <div class="d-flex align-center">
+                <v-avatar
+                  color="rgba(var(--v-theme-accent), 0.1)"
+                  class="mr-3"
+                  rounded="lg"
+                >
+                  <v-icon icon="mdi-lightning-bolt" color="accent"></v-icon>
+                </v-avatar>
+                <div>
+                  <div
+                    class="text-caption text-medium-emphasis font-weight-bold"
+                  >
+                    XP MINGGU INI
+                  </div>
+                  <div class="text-h5 font-weight-black text-accent">
+                    +{{ weeklyXP }} XP
+                  </div>
+                </div>
+              </div>
+            </v-card>
+          </v-col>
+          <v-col cols="12">
+            <v-card class="ocean-card pa-4 bg-surface-soft" elevation="0">
+              <div class="d-flex align-center">
+                <v-avatar
+                  color="rgba(var(--v-theme-error), 0.1)"
+                  class="mr-3"
+                  rounded="lg"
+                >
+                  <v-icon icon="mdi-fire-circle" color="error"></v-icon>
+                </v-avatar>
+                <div>
+                  <div
+                    class="text-caption text-medium-emphasis font-weight-bold"
+                  >
+                    REKOR STREAK TERBAIK
+                  </div>
+                  <div class="text-h5 font-weight-black text-error">
+                    {{ userStore.statistics.longestStreak }} Hari
+                  </div>
+                </div>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
       </v-col>
     </v-row>
 
@@ -562,13 +718,26 @@
 </template>
 
 <script setup>
-import { format } from "date-fns";
+import {
+  format,
+  subDays,
+  startOfWeek,
+  addDays,
+  isSameDay,
+  parseISO,
+  isWithinInterval,
+  startOfToday,
+  endOfToday,
+} from "date-fns";
+import { id } from "date-fns/locale";
 import { computed, onMounted, ref, defineAsyncComponent } from "vue";
 import { useHabitStore } from "../store/habitStore";
 import { useUserStore } from "../store/userStore";
 import { useTodoStore } from "../store/todoStore";
+import { useFinanceStore } from "../store/financeStore";
 import SkeletonLoader from "../components/SkeletonLoader.vue";
 import ImageLoader from "../components/ImageLoader.vue";
+import ProductivityChart from "../components/ProductivityChart.vue";
 
 // Lazy load heavy components
 const CalendarHeatmap = defineAsyncComponent(() =>
@@ -584,6 +753,7 @@ const ClockWidget = defineAsyncComponent(() =>
 const userStore = useUserStore();
 const habitStore = useHabitStore();
 const todoStore = useTodoStore();
+const financeStore = useFinanceStore();
 
 const activityData = ref({});
 const userName = ref("User");
@@ -593,15 +763,23 @@ const showSnackbar = ref(false);
 const lastXpEarned = ref(0);
 
 // Mock Streak History Data
-const streakHistory = [
-  { label: "S", active: true },
-  { label: "S", active: true },
-  { label: "R", active: false },
-  { label: "K", active: true },
-  { label: "J", active: true },
-  { label: "S", active: true },
-  { label: "M", active: true },
-];
+// Streak History Visualization (Dynamic)
+const streakHistory = computed(() => {
+  const history = [];
+  const currentStreak = userStore.streak;
+
+  for (let i = 6; i >= 0; i--) {
+    const date = subDays(new Date(), i);
+    const dayLabel = format(date, "EEEEE", { locale: id }); // Single letter day
+
+    // Simple visualization: if streak covers this day (counting back from today)
+    // This is an approximation since we don't store daily history yet
+    const isActive = i < currentStreak;
+
+    history.push({ label: dayLabel, active: isActive });
+  }
+  return history;
+});
 
 const timeOfDay = computed(() => {
   const hour = new Date().getHours();
@@ -686,10 +864,176 @@ const toggleHabit = async (habit) => {
   }
 };
 
+// --- Advanced Analytics Logic ---
+
+// 1. Calculate Activity Heatmap Data
+const calculateHeatmapData = () => {
+  const data = {};
+
+  // From Habits
+  habitStore.habits.forEach((habit) => {
+    if (habit.completedDates) {
+      habit.completedDates.forEach((dateStr) => {
+        const date = dateStr.split("T")[0];
+        data[date] = (data[date] || 0) + 1;
+      });
+    }
+  });
+
+  // From Tasks (if completedAt exists)
+  todoStore.tasks.forEach((task) => {
+    if (task.completed && task.completedAt) {
+      const date = task.completedAt.split("T")[0];
+      data[date] = (data[date] || 0) + 1;
+    }
+  });
+
+  activityData.value = data;
+};
+
+// 2. Top 3 Consistent Habits
+const topHabits = computed(() => {
+  const habitsWithCount = habitStore.habits.map((habit) => ({
+    ...habit,
+    completionCount: habit.completedDates ? habit.completedDates.length : 0,
+  }));
+
+  // Sort by completion count desc
+  return habitsWithCount
+    .sort((a, b) => b.completionCount - a.completionCount)
+    .slice(0, 3);
+});
+
+const maxHabitCompletion = computed(() => {
+  if (topHabits.value.length === 0) return 1;
+  return topHabits.value[0].completionCount;
+});
+
+// 3. Weekly XP Calculation
+const weeklyXP = computed(() => {
+  // This is an approximation since we don't store XP history with dates yet.
+  // For now, we can sum up XP from habits completed this week.
+  // In a real app, we should have an 'xpHistory' log.
+
+  let xp = 0;
+  const today = new Date();
+  const start = subDays(today, 7);
+
+  habitStore.habits.forEach((habit) => {
+    if (habit.completedDates) {
+      const completionsThisWeek = habit.completedDates.filter((d) => {
+        const date = new Date(d);
+        return date >= start && date <= today;
+      }).length;
+      xp += completionsThisWeek * habit.xp;
+    }
+  });
+
+  return xp;
+});
+
 const addNewHabit = () => {
   // Logic to open add habit dialog
   console.log("Add new habit clicked");
 };
+
+// Finance Logic
+const todayExpense = computed(() => {
+  const today = new Date().toISOString().split("T")[0];
+  return financeStore.transactions
+    .filter((t) => t.type === "expense" && t.date === today)
+    .reduce((sum, t) => sum + t.amount, 0);
+});
+
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat("id-ID").format(value);
+};
+
+// Mood Logic
+const saveMood = (index) => {
+  selectedMood.value = index;
+  localStorage.setItem(
+    "todayMood",
+    JSON.stringify({
+      date: new Date().toDateString(),
+      mood: index,
+    })
+  );
+};
+
+onMounted(() => {
+  // Load saved mood
+  const saved = localStorage.getItem("todayMood");
+  if (saved) {
+    const { date, mood } = JSON.parse(saved);
+    if (date === new Date().toDateString()) {
+      selectedMood.value = mood;
+    }
+  }
+
+  // Initial calculation for heatmap
+  calculateHeatmapData();
+});
+
+// --- Chart Data Logic ---
+
+// Generate last 7 days labels (e.g., "Sen", "Sel")
+const weekLabels = computed(() => {
+  const labels = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = subDays(new Date(), i);
+    labels.push(format(date, "EEE", { locale: id }));
+  }
+  return labels;
+});
+
+// Habit Trend Data (Last 7 days completion count)
+const habitTrendData = computed(() => {
+  const data = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = subDays(new Date(), i);
+    const dateStr = format(date, "yyyy-MM-dd");
+
+    // Count completed habits for this date
+    // Note: This requires habits to have a history of completion dates
+    // Assuming habit.completedDates is array of ISO strings
+    let count = 0;
+    habitStore.habits.forEach((habit) => {
+      if (
+        habit.completedDates &&
+        habit.completedDates.some((d) => d.startsWith(dateStr))
+      ) {
+        count++;
+      }
+    });
+    data.push(count);
+  }
+  return data;
+});
+
+// Task Trend Data (Last 7 days completed tasks)
+const taskTrendData = computed(() => {
+  const data = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = subDays(new Date(), i);
+    const dateStr = format(date, "yyyy-MM-dd");
+
+    // Count completed tasks for this date using completedAt
+    let count = 0;
+    todoStore.tasks.forEach((task) => {
+      if (
+        task.completed &&
+        task.completedAt &&
+        task.completedAt.startsWith(dateStr)
+      ) {
+        count++;
+      }
+    });
+
+    data.push(count);
+  }
+  return data;
+});
 
 onMounted(() => {
   // Data is now auto-loaded by persistence plugin

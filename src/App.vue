@@ -107,16 +107,13 @@
         <div v-if="!rail" class="pa-3">
           <v-card class="user-card rounded-xl pa-4" elevation="0">
             <div class="d-flex align-center">
-              <v-avatar size="48" class="user-avatar">
-                <ImageLoader
-                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
-                  alt="User Avatar"
-                  placeholder-height="48px"
-                  img-class="rounded-circle"
-                />
+              <v-avatar size="48" class="user-avatar" color="surface-variant">
+                <v-icon :icon="userStore.avatar" size="28"></v-icon>
               </v-avatar>
-              <div class="ml-3 flex-grow-1">
-                <div class="text-subtitle-2 font-weight-bold">Alex Doe</div>
+              <div class="ml-3 flex-grow-1 overflow-hidden">
+                <div class="text-subtitle-2 font-weight-bold text-truncate">
+                  {{ userStore.name }}
+                </div>
                 <div class="d-flex align-center mt-1">
                   <v-icon size="14" color="accent" class="mr-1"
                     >mdi-star</v-icon

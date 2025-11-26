@@ -8,11 +8,11 @@
       <v-card-text class="pa-4">
         <div class="d-flex align-center">
           <div class="achievement-icon mr-3">
-            <v-icon
-              :icon="achievement?.icon"
-              size="48"
-              color="warning"
-            ></v-icon>
+            <img
+              :src="achievement?.icon"
+              alt="achievement icon"
+              class="icon-3d"
+            />
           </div>
 
           <div class="flex-grow-1">
@@ -99,6 +99,27 @@ const close = () => {
   background: linear-gradient(135deg, #ffd700, #ffa500);
   border-radius: 50%;
   animation: pulse-glow 2s ease-in-out infinite;
+  padding: 8px;
+}
+
+.icon-3d {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  animation: icon-bounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes icon-bounce {
+  0% {
+    transform: scale(0) rotate(-180deg);
+  }
+  50% {
+    transform: scale(1.2) rotate(10deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
 }
 
 @keyframes pulse-glow {

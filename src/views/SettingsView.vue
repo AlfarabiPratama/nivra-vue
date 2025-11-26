@@ -2,6 +2,66 @@
   <div class="view-container">
     <h2>Pengaturan</h2>
 
+    <!-- Profile Settings -->
+    <div class="card">
+      <h3>Profil Pengguna</h3>
+      <div class="d-flex align-center mb-4">
+        <v-avatar size="72" color="surface-variant" class="mr-4">
+          <v-icon :icon="userStore.avatar" size="40"></v-icon>
+        </v-avatar>
+        <div class="flex-grow-1">
+          <v-text-field
+            v-model="profileForm.name"
+            label="Nama Lengkap"
+            variant="outlined"
+            density="compact"
+            hide-details="auto"
+            class="mb-2"
+          ></v-text-field>
+          <div class="d-flex gap-2">
+            <v-text-field
+              v-model="profileForm.nickname"
+              label="Panggilan"
+              variant="outlined"
+              density="compact"
+              hide-details="auto"
+            ></v-text-field>
+            <v-text-field
+              v-model="profileForm.title"
+              label="Title / Status"
+              variant="outlined"
+              density="compact"
+              hide-details="auto"
+            ></v-text-field>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-2 text-caption font-weight-bold text-medium-emphasis">
+        Pilih Avatar
+      </div>
+      <div class="d-flex gap-2 flex-wrap mb-4">
+        <v-btn
+          v-for="icon in avatarOptions"
+          :key="icon"
+          :icon="icon"
+          size="small"
+          :variant="profileForm.avatar === icon ? 'flat' : 'text'"
+          :color="profileForm.avatar === icon ? 'primary' : ''"
+          @click="profileForm.avatar = icon"
+        ></v-btn>
+      </div>
+
+      <v-btn
+        color="primary"
+        block
+        @click="saveProfile"
+        :loading="savingProfile"
+      >
+        Simpan Profil
+      </v-btn>
+    </div>
+
     <!-- Theme Settings -->
     <div class="card">
       <h3>Tampilan & Tema</h3>
@@ -161,6 +221,37 @@ const bottomNavSize = ref(5);
 const fileInput = ref(null);
 const showRestoreDialog = ref(false);
 const pendingImportData = ref(null);
+const savingProfile = ref(false);
+
+const profileForm = ref({
+  name: userStore.name,
+  nickname: userStore.nickname,
+  title: userStore.title,
+  avatar: userStore.avatar,
+});
+
+const avatarOptions = [
+  "mdi-account-circle",
+  "mdi-account-tie",
+  "mdi-account-hard-hat",
+  "mdi-face-man",
+  "mdi-face-woman",
+  "mdi-robot",
+  "mdi-cat",
+  "mdi-dog",
+  "mdi-rocket",
+  "mdi-star-face",
+];
+
+const saveProfile = () => {
+  savingProfile.value = true;
+  // Simulate network delay
+  setTimeout(() => {
+    userStore.updateProfile(profileForm.value);
+    savingProfile.value = false;
+    showSnackbar("✅ Profil berhasil diperbarui!", "success");
+  }, 500);
+};
 
 const snackbar = ref({
   show: false,
