@@ -43,7 +43,7 @@ const saveBook = () => {
 </script>
 
 <template>
-  <v-container fluid class="pa-6 bg-background h-100">
+  <v-container fluid class="pa-3 pa-md-6 bg-background h-100">
     <!-- Header -->
     <v-row align="center" class="mb-6">
       <v-col cols="12" md="4">

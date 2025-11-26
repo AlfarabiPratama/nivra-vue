@@ -418,7 +418,7 @@ const isToday = (date) => {
 </script>
 
 <template>
-  <v-container fluid class="pa-6 bg-background h-100 position-relative">
+  <v-container fluid class="pa-3 pa-md-6 bg-background h-100 position-relative">
     <!-- XP Popups -->
     <div
       v-for="popup in xpPopups"
