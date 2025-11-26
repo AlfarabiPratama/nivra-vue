@@ -341,6 +341,19 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Global Mobile Overflow Fix */
+:deep(.v-application),
+:deep(.v-main),
+:deep(body),
+:deep(html) {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+:deep(.v-container) {
+  max-width: 100% !important;
+}
+
 /* Page Transitions */
 .fade-enter-active,
 .fade-leave-active {
